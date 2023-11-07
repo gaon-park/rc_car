@@ -68,6 +68,19 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def right(self):
         self.insertCommand("right", "0")
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_W:
+            self.go()
+        elif event.key() == Qt.Key_A:
+            self.left()
+        elif event.key() == Qt.Key_S:
+            self.mid()
+        elif event.key() == Qt.Key_D:
+            self.right()
+
+    def mousePressEvent(self, event):
+        print("mouse")
+
 app = QApplication()
 win = MyApp()
 win.show()

@@ -81,6 +81,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.logText.setPlainText("")
+        self.logText.setReadOnly(True)
         self.stopButton.setText(QCoreApplication.translate("MainWindow", u"STOP", None))
         self.startButton.setText(QCoreApplication.translate("MainWindow", u"START", None))
         self.leftButton.setText(QCoreApplication.translate("MainWindow", u"Left", None))
@@ -89,5 +90,6 @@ class Ui_MainWindow(object):
         self.backButton.setText(QCoreApplication.translate("MainWindow", u"Back", None))
         self.goButton.setText(QCoreApplication.translate("MainWindow", u"Go", None))
         self.sensingText.setPlainText("")
+        self.sensingText.setReadOnly(True)
     # retranslateUi
 
