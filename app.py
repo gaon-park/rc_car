@@ -1,3 +1,5 @@
+# raspi ip: 172.20.10.7
+
 from Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
 from Raspi_PWM_Servo_Driver import PWM
 import mysql.connector
