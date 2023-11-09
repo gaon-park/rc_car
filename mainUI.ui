@@ -14,135 +14,28 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPlainTextEdit" name="logText">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>311</width>
-      <height>331</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Consolas</family>
-      <pointsize>8</pointsize>
-     </font>
-    </property>
-    <property name="plainText">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="stopButton">
-    <property name="geometry">
-     <rect>
-      <x>480</x>
-      <y>390</y>
-      <width>71</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>STOP</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="startButton">
-    <property name="geometry">
-     <rect>
-      <x>550</x>
-      <y>390</y>
-      <width>71</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>START</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="leftButton">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>410</y>
-      <width>71</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Left</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="rightButton">
-    <property name="geometry">
-     <rect>
-      <x>210</x>
-      <y>410</y>
-      <width>71</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Right</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="midButton">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>410</y>
-      <width>71</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Mid</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="backButton">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>450</y>
-      <width>71</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Back</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="goButton">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>370</y>
-      <width>71</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Go</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="sensingText">
-    <property name="geometry">
-     <rect>
-      <x>330</x>
-      <y>10</y>
-      <width>461</width>
-      <height>331</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Consolas</family>
-      <pointsize>8</pointsize>
-     </font>
-    </property>
-    <property name="plainText">
-     <string/>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="2" colspan="2">
+     <widget class="QPlainTextEdit" name="logText">
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QPlainTextEdit" name="sensingText">
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -157,127 +50,17 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>stopButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>stop()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>520</x>
-     <y>439</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>520</x>
-     <y>508</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>startButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>start()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>599</x>
-     <y>423</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>601</x>
-     <y>490</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>rightButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>right()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>357</x>
-     <y>438</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>366</x>
-     <y>479</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>backButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>back()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>280</x>
-     <y>466</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>284</x>
-     <y>530</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>leftButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>left()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>199</x>
-     <y>438</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>189</x>
-     <y>504</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>goButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>go()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>267</x>
-     <y>386</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>209</x>
-     <y>372</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>midButton</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>mid()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>301</x>
-     <y>418</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>410</x>
-     <y>392</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <slots>
   <slot>start()</slot>
   <slot>stop()</slot>
-  <slot>right()</slot>
-  <slot>back()</slot>
-  <slot>left()</slot>
-  <slot>go()</slot>
-  <slot>mid()</slot>
+  <slot>leftPressed()</slot>
+  <slot>leftReleased()</slot>
+  <slot>goPressed()</slot>
+  <slot>goReleased()</slot>
+  <slot>rightPressed()</slot>
+  <slot>rightReleased()</slot>
+  <slot>backPressed()</slot>
+  <slot>backReleased()</slot>
  </slots>
 </ui>

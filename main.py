@@ -1,7 +1,53 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
+from pynput import keyboard
 from mainUI import Ui_MainWindow
 import mysql.connector
+
+
+class KeyThread(QThread):
+    UP = False
+    DOWN = False
+    LEFT = False
+    RIGHT = False
+
+    cmdSignal = Signal(str, bool)
+
+    def __init__(self):
+        super().__init__()
+
+    def on_press(self, key):
+        if key == keyboard.Key.up and not self.UP:
+            self.UP = True
+            self.cmdSignal.emit('GO', True)
+        if key == keyboard.Key.down and not self.DOWN:
+            self.DOWN = True
+            self.cmdSignal.emit('BACK', True)
+        if key == keyboard.Key.left and not self.LEFT:
+            self.LEFT = True
+            self.cmdSignal.emit('LEFT', True)
+        if key == keyboard.Key.right and not self.RIGHT:
+            self.RIGHT = True
+            self.cmdSignal.emit('RIGHT', True)
+
+    def on_release(self, key):
+        if key == keyboard.Key.up and self.UP:
+            self.UP = False
+            self.cmdSignal.emit('STOP', False)
+        if key == keyboard.Key.down and self.DOWN:
+            self.DOWN = False
+            self.cmdSignal.emit('STOP', False)
+        if key == keyboard.Key.left and self.LEFT:
+            self.LEFT = False
+            self.cmdSignal.emit('MID', False)
+        if key == keyboard.Key.right and self.RIGHT:
+            self.RIGHT = False
+            self.cmdSignal.emit('MID', False)
+
+    def run(self):
+        with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+            listener.join()
+
 
 class MyApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -11,36 +57,37 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.init()
 
     def init(self):
-        self.db = mysql.connector.connect(host='52.78.74.11', user='ondol', password='1234', database='rc_car', auth_plugin='mysql_native_password')
+        self.db = mysql.connector.connect(host='52.78.74.11', user='ondol', password='1234', database='rc_car',
+                                          auth_plugin='mysql_native_password')
         self.cur = self.db.cursor()
 
-        #timer setting
+        # timer setting
         self.timer = QTimer()
-        self.timer.setInterval(500) #500ms
-        self.timer.timeout.connect(self.pollingQuery)
-
-    def start(self):
+        self.timer.setInterval(500)  # 500ms
+        self.timer.timeout.connect(self.polling_query)
         self.timer.start()
 
-    def pollingQuery(self):
+        self.keyThread = KeyThread()
+        self.keyThread.start()
+        self.keyThread.cmdSignal.connect(self.insert_command)
+
+    def polling_query(self):
         self.cur.execute("select * from command order by time desc limit 15")
         self.ui.logText.clear()
         for (id, time, cmd_string, arg_string, is_finish) in self.cur:
-            str = "%5d | %s | %6s | %6s | %4d" % (id, time.strftime("%Y%m%d %H:%M:%S"), cmd_string, arg_string, is_finish)
+            str = "%5d | %s | %6s | %6s | %4d" % (
+                id, time.strftime("%Y%m%d %H:%M:%S"), cmd_string, arg_string, is_finish)
             self.ui.logText.appendPlainText(str)
 
         self.cur.execute("select * from sensing order by time desc limit 15")
         self.ui.sensingText.clear()
         for (id, time, num1, num2, num3, meta_string, is_finish) in self.cur:
-            str = "%d | %s | %6s | %6s | %6s | %15s | %4d" % (id, time.strftime("%Y%m%d %H:%M:%S"), num1, num2, num3, meta_string, is_finish)
+            str = "%d | %s | %6s | %6s | %6s | %15s | %4d" % (
+                id, time.strftime("%Y%m%d %H:%M:%S"), num1, num2, num3, meta_string, is_finish)
             self.ui.sensingText.appendPlainText(str)
         self.db.commit()
 
-    def closeEvent(self, event):
-        self.cur.close()
-        self.db.close()
-
-    def insertCommand(self, cmd_string, arg_string):
+    def insert_command(self, cmd_string, arg_string):
         time = QDateTime().currentDateTime().toPython()
         is_finish = 0
 
@@ -50,36 +97,15 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.cur.execute(query, value)
         self.db.commit()
 
-    def go(self):
-        self.insertCommand("go", "0")
+    def closeEvent(self, event):
+        # delete command
+        self.cur.execute("delete from command *")
+        self.db.commit()
 
-    def stop(self):
-        self.insertCommand("stop", "0")
+        # connection close
+        self.cur.close()
+        self.db.close()
 
-    def back(self):
-        self.insertCommand("back", "0")
-
-    def left(self):
-        self.insertCommand("left", "0")
-
-    def mid(self):
-        self.insertCommand("mid", "0")
-
-    def right(self):
-        self.insertCommand("right", "0")
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_W:
-            self.go()
-        elif event.key() == Qt.Key_A:
-            self.left()
-        elif event.key() == Qt.Key_S:
-            self.mid()
-        elif event.key() == Qt.Key_D:
-            self.right()
-
-    def mousePressEvent(self, event):
-        print("mouse")
 
 app = QApplication()
 win = MyApp()
