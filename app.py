@@ -13,6 +13,7 @@ from http import server
 
 speed = 200
 
+
 def closeDB(signal, frame):
     print("BYE")
     mh.getMotor(2).run(Raspi_MotorHAT.RELEASE)
@@ -21,13 +22,14 @@ def closeDB(signal, frame):
     timer.cancel()
     sys.exit(0)
 
+
 def polling():
     global cur, db, ready
 
     cur.execute("select * from command where is_finish = 0 order by time desc")
     ids = []
     for (id, time, cmd_string, arg_string, is_finish) in cur:
-        if is_finish == 1 : break
+        if is_finish == 1: break
         ready = (cmd_string, arg_string)
         ids.append(str(id))
 
@@ -40,29 +42,37 @@ def polling():
     timer = Timer(0.1, polling)
     timer.start()
 
+
 def go():
     myMotor.setSpeed(speed)
     myMotor.run(Raspi_MotorHAT.BACKWARD)
+
 
 def back():
     myMotor.setSpeed(speed)
     myMotor.run(Raspi_MotorHAT.FORWARD)
 
+
 def stop():
     myMotor.setSpeed(speed)
     myMotor.run(Raspi_MotorHAT.RELEASE)
 
+
 def left():
     pwm.setPWM(0, 0, 300)
+
 
 def mid():
     pwm.setPWM(0, 0, 375)
 
+
 def right():
     pwm.setPWM(0, 0, 450)
 
-#init
-db = mysql.connector.connect(host='52.78.74.11', user='ondol', password='1234', database='rc_car', auth_plugin='mysql_native_password')
+
+# init
+db = mysql.connector.connect(host='52.78.74.11', user='ondol', password='1234', database='rc_car',
+                             auth_plugin='mysql_native_password')
 cur = db.cursor()
 ready = None
 timer = None
@@ -75,7 +85,7 @@ pwm.setPWMFreq(60)
 signal.signal(signal.SIGINT, closeDB)
 polling()
 
-#main thread
+# main thread
 while True:
     sleep(0.1)
     if ready == None:
