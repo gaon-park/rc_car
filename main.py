@@ -3,6 +3,7 @@ from PySide6.QtCore import *
 from pynput import keyboard
 from mainUI import Ui_MainWindow
 import mysql.connector
+import sys
 
 
 class KeyThread(QThread):
@@ -12,6 +13,7 @@ class KeyThread(QThread):
     RIGHT = False
 
     cmdSignal = Signal(str, bool)
+    exitSignal = Signal()
 
     def __init__(self):
         super().__init__()
@@ -43,6 +45,9 @@ class KeyThread(QThread):
         if key == keyboard.Key.right and self.RIGHT:
             self.RIGHT = False
             self.cmdSignal.emit('MID', False)
+        #     종료 시그널
+        if key == keyboard.Key.esc:
+            self.exitSignal.emit()
 
     def run(self):
         with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
@@ -70,6 +75,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.keyThread = KeyThread()
         self.keyThread.start()
         self.keyThread.cmdSignal.connect(self.insert_command)
+        self.keyThread.exitSignal.connect(self.close)
 
     def polling_query(self):
         self.cur.execute("select * from command order by time desc limit 15")
@@ -90,7 +96,6 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def insert_command(self, cmd_string, arg_string):
         time = QDateTime().currentDateTime().toPython()
         is_finish = 0
-
         query = "insert into command(time, cmd_string, arg_string, is_finish) values (%s, %s, %s, %s)"
         value = (time, cmd_string, arg_string, is_finish)
 
@@ -99,15 +104,22 @@ class MyApp(QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         # delete command
-        self.cur.execute("delete from command c where date(c.time) = date(now())")
+        self.cur.execute("delete from command c where c.time <= now()")
         self.db.commit()
 
         # connection close
         self.cur.close()
         self.db.close()
 
+        # thread / timer stop
+        self.timer.stop()
+        self.keyThread.terminate()
+        self.close()
 
-app = QApplication()
-win = MyApp()
-win.show()
-app.exec()
+
+if __name__ == '__main__':
+    app = QApplication()
+    win = MyApp()
+    win.show()
+    # app.exec()
+    sys.exit(app.exec())
