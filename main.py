@@ -99,7 +99,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         # delete command
-        self.cur.execute("delete from command *")
+        self.cur.execute("delete from command c where date(c.time) = date(now())")
         self.db.commit()
 
         # connection close
