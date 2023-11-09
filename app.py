@@ -5,6 +5,11 @@ from threading import Timer
 from time import sleep
 import signal
 import sys
+import io
+import picamera
+import socketserver
+from threading import Condition
+from http import server
 
 speed = 200
 
@@ -48,7 +53,7 @@ def stop():
     myMotor.run(Raspi_MotorHAT.RELEASE)
 
 def left():
-    pwm.setPWM(0, 0, 250)
+    pwm.setPWM(0, 0, 300)
 
 def mid():
     pwm.setPWM(0, 0, 375)
