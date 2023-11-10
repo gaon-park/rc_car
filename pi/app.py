@@ -102,7 +102,7 @@ class CameraThread(QThread):
         self.camera.set(4, 480)
 
     def run(self):
-        while(self.camera.isOpened()):
+        while self.camera.isOpened():
             _, image = self.camera.read()
             image = cv2.flip(image, -1)
             cv2.imshow('camera test', image)
