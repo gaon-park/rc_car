@@ -4,7 +4,7 @@ import mysql.connector
 from threading import Timer
 from time import sleep
 import signal
-from PySide6.QtCore import *
+from PySide2.QtCore import *
 import cv2
 import sys
 
@@ -98,15 +98,23 @@ class CameraThread(QThread):
     def __init__(self):
         super().__init__()
         self.camera = cv2.VideoCapture(-1)
-        self.camera.set(3, 680)
+        self.camera.set(3, 640)
         self.camera.set(4, 480)
 
     def run(self):
-        while self.camera.isOpened():
+        while(self.camera.isOpened()):
             _, image = self.camera.read()
             image = cv2.flip(image, -1)
-            cv2.imshow('camera', image)
+            cv2.imshow('camera test', image)
 
             if cv2.waitKey(1) == ord('q'):
                 break
-        cv2.destroyAllWindows()
+
+        cv2.destoryAllWindows()
+
+
+if __name__ == '__main__':
+    cameraTh = CameraThread()
+    cameraTh.start()
+    cmdTh = CmdThread()
+    cmdTh.start()
