@@ -3,10 +3,11 @@ from Raspi_PWM_Servo_Driver import PWM
 from PySide2.QtCore import *
 import cv2
 import paho.mqtt.client as mqtt
+import socket
 
 
 class CmdThread(QThread):
-    broker_address = ""
+    broker_address = "127.0.0.1"
     speed = 100
 
     def on_command(self, client, userdata, message):
@@ -27,6 +28,7 @@ class CmdThread(QThread):
     def __init__(self):
         super().__init__()
         self.client = mqtt.Client("cmd_sub")
+        print(self.broker_address)
         self.client.connect(self.broker_address)
         self.client.subscribe("command")
         self.client.on_message = self.on_command
@@ -85,3 +87,4 @@ if __name__ == '__main__':
     cameraTh.start()
     cmdTh = CmdThread()
     cmdTh.start()
+

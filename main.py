@@ -56,23 +56,31 @@ class KeyThread(QThread):
 
 class MyApp(QMainWindow, Ui_MainWindow):
     broker_address = ""
+    set_mqtt = False
+
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.init()
 
-    def init(self):
+    def ip_commit(self):
         self.mqttc = mqtt.Client("cmd_pub")
         self.mqttc.connect(self.broker_address, 1883)
 
-        self.keyThread = KeyThread()
-        self.keyThread.start()
-        self.keyThread.cmdSignal.connect(self.pub_message)
-        self.keyThread.exitSignal.connect(self.close)
+        if not self.set_mqtt:
+            self.keyThread = KeyThread()
+            self.keyThread.start()
+            self.keyThread.cmdSignal.connect(self.pub_message)
+            self.keyThread.exitSignal.connect(self.close)
+
+        self.set_mqtt = True
+
+    def ip_changed(self, val):
+        self.broker_address = val
 
     def pub_message(self, msg):
-        self.mqttc.publish(msg)
+        if self.set_mqtt:
+            self.mqttc.publish("command", msg)
 
     def close_event(self, event):
         # thread close
