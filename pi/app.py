@@ -12,18 +12,18 @@ class CmdThread(QThread):
 
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
-        if cmd == "GO":
+        if "go" in cmd:
             self.go()
-        if cmd == "BACK":
+        if "back" in cmd:
             self.back()
-        if cmd == "STOP":
+        if "stop" in cmd:
             self.stop()
-        if cmd == "LEFT":
+        if "left" in cmd:
             self.left()
-        if cmd == "MID":
-            self.mid()
-        if cmd == "RIGHT":
+        if "right" in cmd:
             self.right()
+        if "mid" in cmd:
+            self.mid()
 
     def __init__(self):
         super().__init__()
