@@ -5,6 +5,9 @@ import cv2
 import paho.mqtt.client as mqtt
 import socket
 from sense_hat import SenseHat
+from gpiozero import TonalBuzzer
+from gpiozero.tones import Tone
+from time import sleep
 
 isFront = False
 isBack = False
@@ -111,6 +114,29 @@ class SenseHatThread(QThread):
             else:
                 self.onBreakLED()
 
+class EtcThread(QThread):
+    broker_address = socket.gethostbyname(socket.gethostname())
+    buzzer = TonalBuzzer(14)
+    lst = 810.2
+
+    def __init__(self):
+        super().__init__()
+        self.client = mqtt.Client("etc_sub")
+        self.client.connect(self.broker_address)
+        self.client.subscribe("etc")
+        self.client.on_message = self.on_command
+
+    def on_command(self, client, userdata, message):
+        cmd = str(message.payload.decode("utf-8"))
+        if "buzzer_on" == cmd:
+            self.buzzer.play(self.lst0)
+        elif "buzzer_off" == cmd:
+            self.buzzer.stop()
+
+    def run(self):
+        self.client.loop_forever()
+
+
 class CmdThread(QThread):
     broker_address = socket.gethostbyname(socket.gethostname())
     speed = 100
@@ -119,27 +145,27 @@ class CmdThread(QThread):
         cmd = str(message.payload.decode("utf-8"))
         global isFront, isBack, isLeft, isRight, cmdCnt
         cmdCnt += 1
-        if "go" in cmd:
+        if "go" == cmd:
             isFront = True
             isBack = False
             self.go()
-        if "back" in cmd:
+        if "back" == cmd:
             isFront = False
             isBack = True
             self.back()
-        if "stop" in cmd:
+        if "stop" == cmd:
             isFront = False
             isBack = False
             self.stop()
-        if "left" in cmd:
+        if "left" == cmd:
             isLeft = True
             isRight = False
             self.left()
-        if "right" in cmd:
+        if "right" == cmd:
             isLeft = False
             isRight = True
             self.right()
-        if "mid" in cmd:
+        if "mid" == cmd:
             isLeft = False
             isRight = False
             self.mid()
@@ -147,7 +173,6 @@ class CmdThread(QThread):
     def __init__(self):
         super().__init__()
         self.client = mqtt.Client("cmd_sub")
-        print(self.broker_address)
         self.client.connect(self.broker_address)
         self.client.subscribe("command")
         self.client.on_message = self.on_command
@@ -208,4 +233,6 @@ if __name__ == '__main__':
     senseTh.start()
     cmdTh = CmdThread()
     cmdTh.start()
+    etcTh = EtcThread()
+    etcTh.start()
 
