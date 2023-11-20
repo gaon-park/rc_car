@@ -16,16 +16,41 @@ EspMQTTClient client(
   "TestClient",
   1883);
 
+const int go_button = 18;    // the number of the pushbutton pin
+const int back_button = 19;  // the number of the LED pin
+volatile unsigned long button_time = 0, last_button_time = 0;
+volatile bool go_button_pressed = false, back_button_pressed = false;
+
 //송신용 tx()
 char *tx_topic = "command";
 void tx(char *cmd) {
   client.publish(tx_topic, cmd);  //topic , cmd
 }
 
+void go_changed(void) {
+  button_time = millis();
+  if (button_time - last_button_time > 100) {
+    go_button_pressed = !go_button_pressed;
+    last_button_time = button_time;
+  }
+}
+
+void back_changed(void) {
+  button_time = millis();
+  if (button_time - last_button_time > 100) {
+    back_button_pressed = !back_button_pressed;
+    last_button_time = button_time;
+  }
+}
+
 void setup(void) {
   Serial.begin(115200);
   client.enableHTTPWebUpdater();
   client.enableOTA();
+  pinMode(go_button, INPUT_PULLUP);
+  pinMode(back_button, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(go_button), go_changed, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(back_button), back_changed, CHANGE);
 
   while (!Serial)
     delay(10);  // will pause Zero, Leonardo, etc until serial console opens
@@ -40,69 +65,20 @@ void setup(void) {
   Serial.println("MPU6050 Found!");
 
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-  Serial.print("Accelerometer range set to: ");
-  switch (mpu.getAccelerometerRange()) {
-    case MPU6050_RANGE_2_G:
-      Serial.println("+-2G");
-      break;
-    case MPU6050_RANGE_4_G:
-      Serial.println("+-4G");
-      break;
-    case MPU6050_RANGE_8_G:
-      Serial.println("+-8G");
-      break;
-    case MPU6050_RANGE_16_G:
-      Serial.println("+-16G");
-      break;
-  }
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-  Serial.print("Gyro range set to: ");
-  switch (mpu.getGyroRange()) {
-    case MPU6050_RANGE_250_DEG:
-      Serial.println("+- 250 deg/s");
-      break;
-    case MPU6050_RANGE_500_DEG:
-      Serial.println("+- 500 deg/s");
-      break;
-    case MPU6050_RANGE_1000_DEG:
-      Serial.println("+- 1000 deg/s");
-      break;
-    case MPU6050_RANGE_2000_DEG:
-      Serial.println("+- 2000 deg/s");
-      break;
-  }
-
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-  Serial.print("Filter bandwidth set to: ");
-  switch (mpu.getFilterBandwidth()) {
-    case MPU6050_BAND_260_HZ:
-      Serial.println("260 Hz");
-      break;
-    case MPU6050_BAND_184_HZ:
-      Serial.println("184 Hz");
-      break;
-    case MPU6050_BAND_94_HZ:
-      Serial.println("94 Hz");
-      break;
-    case MPU6050_BAND_44_HZ:
-      Serial.println("44 Hz");
-      break;
-    case MPU6050_BAND_21_HZ:
-      Serial.println("21 Hz");
-      break;
-    case MPU6050_BAND_10_HZ:
-      Serial.println("10 Hz");
-      break;
-    case MPU6050_BAND_5_HZ:
-      Serial.println("5 Hz");
-      break;
-  }
-
-  Serial.println("");
   delay(100);
 }
 
-void read_acceleration(sensors_vec_t ac) {
+void read_command(sensors_vec_t ac) {
+  if (go_button_pressed) {
+    tx("go");
+  } else if (back_button_pressed) {
+    tx("back");
+  } else {
+    tx("stop");
+  }
+
   if (ac.y >= 6) {
     // Serial.println("left");
     tx("left");
@@ -125,12 +101,12 @@ void loop() {
   mpu.getEvent(&a, &g, &temp);
 
   /* Print out the values */
-  Serial.print("Acceleration X: ");
-  Serial.print(a.acceleration.x);
-  Serial.print(", Y: ");
-  Serial.print(a.acceleration.y);
-  Serial.println();
-  read_acceleration(a.acceleration);
+  // Serial.print("Acceleration X: ");
+  // Serial.print(a.acceleration.x);
+  // Serial.print(", Y: ");
+  // Serial.print(a.acceleration.y);
+  // Serial.println();
+  read_command(a.acceleration);
   client.loop();
   delay(500);
 }
