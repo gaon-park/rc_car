@@ -48,6 +48,8 @@ public:
       // Serial.println("left");
       tx(cmd_topic, "left");
       command_left = true;
+      command_right = false;
+      command_mid = false;
     } else if (ac.y <= -6 && !command_right) {
       // Serial.println("right");
       tx(cmd_topic, "right");
