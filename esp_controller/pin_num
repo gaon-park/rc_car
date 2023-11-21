@@ -1,0 +1,22 @@
+// left esp32
+// cmd
+go = 18
+back = 19
+
+// mpu
+scl = 22
+sda = 21
+
+// right esp32
+// rotary encoder
+sw = 36
+dt = 39
+clk = 34
+
+// etc
+buzzer = 23
+
+// mic
+bclk = 1
+dout = 19
+lrcl = 3

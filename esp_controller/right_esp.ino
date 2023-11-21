@@ -16,7 +16,7 @@ EspMQTTClient client(
   "RightContoller",
   1883);
 
-const int buzzer_button = 3;  // the number of the buzzer button pin
+const int buzzer_button = 23;  // the number of the buzzer button pin
 const int rotary_encoder_sw = 36;
 const int rotary_encoder_data = 39;
 const int rotary_encoder_clk = 34;
