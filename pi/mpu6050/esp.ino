@@ -6,6 +6,8 @@
 #include "EspMQTTClient.h"
 #include "Thread.h"
 #include "ThreadController.h"
+#include <Arduino.h>
+#include <RotaryEncoder.h>
 
 Adafruit_MPU6050 mpu;
 
@@ -21,6 +23,13 @@ EspMQTTClient client(
 const int go_button = 18;     // the number of the go button pin
 const int back_button = 19;   // the number of the back button pin
 const int buzzer_button = 3;  // the number of the buzzer button pin
+const int rotary_encoder_sw = 36;
+const int rotary_encoder_data = 39;
+const int rotary_encoder_clk = 34;
+
+volatile int counter = 0,  // 회전 카운터 측정용
+  currentStateCLK = 0,     // CLK의 현재 신호상태 저장용
+  lastStateCLK = 0;        // 직전 CLK의 신호상태 저장용
 
 // 한 번만 보내기 위한 flg 변수
 volatile bool command_go = false,
@@ -29,7 +38,8 @@ volatile bool command_go = false,
               command_left = false,
               command_right = false,
               command_mid = false;
-volatile bool command_buzzer = false;
+volatile bool command_buzzer = false,
+              command_rotary_button = false;
 
 char *cmd_topic = "command";
 char *etc_topic = "etc";
@@ -93,7 +103,7 @@ void cmd_button_check(void) {
   }
 }
 
-void etc_button_check(void) {
+void buzzer_button_check(void) {
   if (digitalRead(buzzer_button) == LOW && !command_buzzer) {
     // Serial.println("buzzer_on");
     tx(etc_topic, "buzzer_on");
@@ -105,9 +115,37 @@ void etc_button_check(void) {
   }
 }
 
+volatile int lastEncoded = 0, speed = 1;
+volatile long encoderValue = 0;
+volatile bool command_speed = false;
+char rotary_command_base[10] = "speed=";
+void rotary_check(void) {
+  int clk = digitalRead(rotary_encoder_clk);
+  int dt = digitalRead(rotary_encoder_data);
+  int encoded = (clk << 1) | dt;
+  int sum = (lastEncoded << 2) | encoded;
+
+  if ((sum == 0b1101 || sum == 0b1011) && !command_speed) {  // left
+    if (speed > 1) {                                         // min speed = 1
+      speed--;
+      rotary_command_base[6] = speed + '0';
+      tx(cmd_topic, rotary_command_base);
+    }
+  }
+  if (sum == 0b1110 || sum == 0b1000) {  // right
+    if (speed < 9) {                     // max speed = 9
+      speed++;
+      rotary_command_base[6] = speed + '0';
+      tx(cmd_topic, rotary_command_base);
+    }
+  }
+  lastEncoded = encoded;
+}
+
 // create thread
 Thread cmd_th = Thread(),
-       etc_th = Thread();
+       buzzer_th = Thread(),
+       rotary_th = Thread();
 MPUThread mpu_th = MPUThread();
 ThreadController controller = ThreadController();
 
@@ -121,19 +159,28 @@ void setup(void) {
   client.enableHTTPWebUpdater();
   client.enableOTA();
 
+  // command
   pinMode(go_button, INPUT_PULLUP);
   pinMode(back_button, INPUT_PULLUP);
+
+  // etc
   pinMode(buzzer_button, INPUT_PULLUP);
+  pinMode(rotary_encoder_sw, INPUT);
+  pinMode(rotary_encoder_data, INPUT);
+  pinMode(rotary_encoder_clk, INPUT);
 
   // callback thread func
   cmd_th.onRun(cmd_button_check);
   cmd_th.setInterval(50);
-  etc_th.onRun(etc_button_check);
-  etc_th.setInterval(50);
+  buzzer_th.onRun(buzzer_button_check);
+  buzzer_th.setInterval(50);
+  rotary_th.onRun(rotary_check);
+  rotary_th.setInterval(10);
 
   controller.add(&mpu_th);
   controller.add(&cmd_th);
-  controller.add(&etc_th);
+  controller.add(&buzzer_th);
+  controller.add(&rotary_th);
 
   while (!Serial)
     delay(10);  // will pause Zero, Leonardo, etc until serial console opens

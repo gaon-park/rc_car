@@ -6,8 +6,6 @@ import paho.mqtt.client as mqtt
 import socket
 from sense_hat import SenseHat
 from gpiozero import TonalBuzzer
-from gpiozero.tones import Tone
-from time import sleep
 
 isFront = False
 isBack = False
@@ -89,6 +87,7 @@ class SenseHatThread(QThread):
         self.sense.set_pixel(7, 0, self.RED)
 
     currentCnt = 0
+
     def run(self):
         global isFront, isBack, isLeft, isRight, cmdCnt
         while True:
@@ -114,10 +113,13 @@ class SenseHatThread(QThread):
             else:
                 self.onBreakLED()
 
+
 class EtcThread(QThread):
     broker_address = socket.gethostbyname(socket.gethostname())
     buzzer = TonalBuzzer(14)
     lst = 810.2
+
+    speedCmdSignal = Signal()
 
     def __init__(self):
         super().__init__()
@@ -129,7 +131,7 @@ class EtcThread(QThread):
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
         if "buzzer_on" == cmd:
-            self.buzzer.play(self.lst0)
+            self.buzzer.play(self.lst)
         elif "buzzer_off" == cmd:
             self.buzzer.stop()
 
@@ -139,36 +141,45 @@ class EtcThread(QThread):
 
 class CmdThread(QThread):
     broker_address = socket.gethostbyname(socket.gethostname())
-    speed = 100
+    speed = 50  # default speed = 50, 이후 mqtt command 에 따라 50씩 증가
 
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
         global isFront, isBack, isLeft, isRight, cmdCnt
         cmdCnt += 1
-        if "go" == cmd:
+        if "go" == cmd and not isFront:
             isFront = True
             isBack = False
             self.go()
-        if "back" == cmd:
+        elif "back" == cmd and not isBack:
             isFront = False
             isBack = True
             self.back()
-        if "stop" == cmd:
+        elif "stop" == cmd and (isFront or isBack):
             isFront = False
             isBack = False
             self.stop()
-        if "left" == cmd:
+        elif "left" == cmd and not isLeft:
             isLeft = True
             isRight = False
             self.left()
-        if "right" == cmd:
+        elif "right" == cmd and not isRight:
             isLeft = False
             isRight = True
             self.right()
-        if "mid" == cmd:
+        elif "mid" == cmd and (isLeft or isRight):
             isLeft = False
             isRight = False
             self.mid()
+        elif "speed" in cmd:
+            self.speed = int(cmd.split("=")[1]) * 50
+            self.speed_changed()
+
+    def speed_changed(self):
+        if isFront:
+            self.go()
+        elif isBack:
+            self.back()
 
     def __init__(self):
         super().__init__()
@@ -235,4 +246,3 @@ if __name__ == '__main__':
     cmdTh.start()
     etcTh = EtcThread()
     etcTh.start()
-
