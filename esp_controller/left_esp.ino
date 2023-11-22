@@ -42,19 +42,11 @@ void tx(char *topic, char *cmd) {
   client.publish(topic, cmd);  //topic , cmd
 }
 
-void left_to_false(void) {
+void command_direction_all_false(void) {
   COMMAND_LEFT_MIN = false;
   COMMAND_LEFT_MAX = false;
-}
-
-void right_to_false(void) {
   COMMAND_RIGHT_MIN = false;
   COMMAND_RIGHT_MAX = false;
-}
-
-void command_direction_all_false(void) {
-  left_to_false();
-  right_to_false();
   COMMAND_MID = false;
 }
 

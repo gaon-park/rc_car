@@ -30,7 +30,7 @@ IS_LEFT_MIN = False
 IS_LEFT_MAX = False
 IS_RIGHT_MIN = False
 IS_RIGHT_MAX = False
-CMD_CNT = 0
+
 PAGE = """\
 <html>
 <head>
@@ -257,7 +257,7 @@ class CmdThread(threading.Thread):
     speed = [100, 150, 200, 255]
 
     def is_lr_all_false(self):
-        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX, CMD_CNT
+        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX
         IS_LEFT_MIN = False
         IS_LEFT_MAX = False
         IS_RIGHT_MIN = False
@@ -265,8 +265,7 @@ class CmdThread(threading.Thread):
 
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
-        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX, CMD_CNT
-        CMD_CNT += 1
+        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX
         if "go" == cmd and not IS_FRONT:
             IS_FRONT = True
             IS_BACK = False
