@@ -1,6 +1,5 @@
 from Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
 from Raspi_PWM_Servo_Driver import PWM
-from PySide2.QtCore import *
 import cv2
 import paho.mqtt.client as mqtt
 import socket

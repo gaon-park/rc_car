@@ -16,7 +16,6 @@ EspMQTTClient client(
   "RightContoller",
   1883);
 
-const int buzzer_button = 23;  // the number of the buzzer button pin
 const int rotary_encoder_sw = 36;
 const int rotary_encoder_data = 39;
 const int rotary_encoder_clk = 34;
@@ -26,8 +25,7 @@ volatile int counter = 0,  // 회전 카운터 측정용
   lastStateCLK = 0;        // 직전 CLK의 신호상태 저장용
 
 // 한 번만 보내기 위한 flg 변수
-volatile bool command_buzzer = false,
-              command_rotary_button = false;
+volatile bool command_rotary_button = false;
 
 char *cmd_topic = "command";
 char *etc_topic = "etc";
@@ -35,18 +33,6 @@ char *etc_topic = "etc";
 //송신용 tx()
 void tx(char *topic, char *cmd) {
   client.publish(topic, cmd);  //topic , cmd
-}
-
-void buzzer_button_check(void) {
-  if (digitalRead(buzzer_button) == LOW && !command_buzzer) {
-    // Serial.println("buzzer_on");
-    tx(etc_topic, "buzzer_on");
-    command_buzzer = true;
-  } else if (digitalRead(buzzer_button) == HIGH && command_buzzer) {
-    // Serial.println("buzzer_off");
-    tx(etc_topic, "buzzer_off");
-    command_buzzer = false;
-  }
 }
 
 volatile int lastEncoded = 0, speed = 1;
@@ -77,8 +63,7 @@ void rotary_check(void) {
 }
 
 // create thread
-Thread buzzer_th = Thread(),
-       rotary_th = Thread();
+Thread rotary_th = Thread();
 ThreadController controller = ThreadController();
 
 // This is the callback for the Timer
@@ -92,18 +77,14 @@ void setup(void) {
   client.enableOTA();
 
   // etc
-  pinMode(buzzer_button, INPUT_PULLUP);
   pinMode(rotary_encoder_sw, INPUT);
   pinMode(rotary_encoder_data, INPUT);
   pinMode(rotary_encoder_clk, INPUT);
 
   // callback thread func
-  buzzer_th.onRun(buzzer_button_check);
-  buzzer_th.setInterval(50);
   rotary_th.onRun(rotary_check);
   rotary_th.setInterval(10);
 
-  controller.add(&buzzer_th);
   controller.add(&rotary_th);
 
   while (!Serial)

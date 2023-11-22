@@ -19,8 +19,11 @@ EspMQTTClient client(
   "LeftController",
   1883);
 
-const int go_button = 18;     // the number of the go button pin
-const int back_button = 19;   // the number of the back button pin
+const int go_button = 18;                    // the number of the go button pin
+const int back_button = 19;                  // the number of the back button pin
+const int buzzer_button = 17;                // the number of the buzzer button pin
+const int row_pins[4] = { 32, 33, 25, 26 };  // 4x4 keypad
+const int col_pins[4] = { 35, 34, 39, 36 };  // 4x4 keypad
 
 // 한 번만 보내기 위한 flg 변수
 volatile bool command_go = false,
@@ -28,9 +31,11 @@ volatile bool command_go = false,
               command_stop = false,
               command_left = false,
               command_right = false,
-              command_mid = false;
+              command_mid = false,
+              command_buzzer = false;
 
 char *cmd_topic = "command";
+char *etc_topic = "etc";
 
 //송신용 tx()
 void tx(char *topic, char *cmd) {
@@ -91,8 +96,21 @@ void cmd_button_check(void) {
   }
 }
 
+void buzzer_button_check(void) {
+  if (digitalRead(buzzer_button) == LOW && !command_buzzer) {
+    // Serial.println("buzzer_on");
+    tx(etc_topic, "buzzer_on");
+    command_buzzer = true;
+  } else if (digitalRead(buzzer_button) == HIGH && command_buzzer) {
+    // Serial.println("buzzer_off");
+    tx(etc_topic, "buzzer_off");
+    command_buzzer = false;
+  }
+}
+
 // create thread
-Thread cmd_th = Thread();
+Thread cmd_th = Thread(),
+       buzzer_th = Thread();
 MPUThread mpu_th = MPUThread();
 ThreadController controller = ThreadController();
 
@@ -110,12 +128,18 @@ void setup(void) {
   pinMode(go_button, INPUT_PULLUP);
   pinMode(back_button, INPUT_PULLUP);
 
+  // etc
+  pinMode(buzzer_button, INPUT_PULLUP);
+
   // callback thread func
   cmd_th.onRun(cmd_button_check);
   cmd_th.setInterval(50);
+  buzzer_th.onRun(buzzer_button_check);
+  buzzer_th.setInterval(50);
 
   controller.add(&mpu_th);
   controller.add(&cmd_th);
+  controller.add(&buzzer_th);
 
   while (!Serial)
     delay(10);  // will pause Zero, Leonardo, etc until serial console opens

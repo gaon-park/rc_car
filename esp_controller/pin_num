@@ -7,14 +7,14 @@ back = 19
 scl = 22
 sda = 21
 
+// etc
+buzzer = 17
+
 // right esp32
 // rotary encoder
 sw = 36
 dt = 39
 clk = 34
-
-// etc
-buzzer = 23
 
 // mic
 bclk = 1
