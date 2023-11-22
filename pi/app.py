@@ -204,11 +204,8 @@ class SenseHatThread(threading.Thread):
 
     def run(self):
         self.sense.clear()
-        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX, CMD_CNT
+        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX
         while True:
-            if self.current_cnt != CMD_CNT:
-                self.sense.clear()
-                self.current_cnt = CMD_CNT
             if IS_FRONT and (IS_LEFT_MIN or IS_LEFT_MAX):
                 self.on_dir_led(self.FRONT_LEFT)
             elif IS_FRONT and (IS_RIGHT_MIN or IS_RIGHT_MAX):
