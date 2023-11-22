@@ -9,11 +9,20 @@ import logging
 import socketserver
 from http import server
 from threading import Condition
+import threading
+from PySide2.QtCore import *
 
+# camera
 from picamera2 import Picamera2
 from picamera2.encoders import JpegEncoder
 from picamera2.outputs import FileOutput
 import libcamera
+
+# oled
+import board
+import digitalio
+from PIL import Image, ImageDraw, ImageFont
+import adafruit_ssd1306
 
 IS_FRONT = False
 IS_BACK = False
@@ -91,7 +100,7 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 
-class SenseHatThread(QThread):
+class SenseHatThread(threading.Thread):
     def __init__(self):
         super().__init__()
         self.sense = SenseHat()
@@ -192,7 +201,7 @@ class SenseHatThread(QThread):
                 self.on_break_led()
 
 
-class EtcThread(QThread):
+class EtcThread(threading.Thread):
     broker_address = socket.gethostbyname(socket.gethostname())
     buzzer = TonalBuzzer(14)
     lst = 810.2
@@ -217,7 +226,7 @@ class EtcThread(QThread):
         self.client.loop_forever()
 
 
-class CmdThread(QThread):
+class CmdThread(threading.Thread):
     broker_address = socket.gethostbyname(socket.gethostname())
     speed = 50  # default speed = 50, 이후 mqtt command 에 따라 50씩 증가
 
@@ -296,7 +305,7 @@ class CmdThread(QThread):
         self.pwm.setPWM(0, 0, 450)
 
 
-class CameraThread(QThread):
+class CameraThread(threading.Thread):
     def __init__(self):
         global output
         super().__init__()
@@ -315,8 +324,12 @@ class CameraThread(QThread):
             self.picam2.stop_recording()
 
 
-class LCDThread(QThread):
+class LCDThread(threading.Thread):
     broker_address = socket.gethostbyname(socket.gethostname())
+    font = ImageFont.truetype('malgun.ttf', 25)
+    WIDTH = 128
+    HEIGHT = 64
+    BORDER = 5
 
     def __init__(self):
         super().__init__()
@@ -325,12 +338,48 @@ class LCDThread(QThread):
         self.client.subscribe("lcd")
         self.client.on_message = self.on_command
 
+        self.oled_reset = digitalio.DigitalInOut(board.D27)
+
+        # use for spi
+        self.spi = board.SPI()
+        self.oled_cs = digitalio.DigitalInOut(board.D8)
+        self.oled_dc = digitalio.DigitalInOut(board.D26)
+        self.oled = adafruit_ssd1306.SSD1306_SPI(self.WIDTH, self.HEIGHT, self.spi, self.oled_dc, self.oled_reset, self.oled_cs)
+
+        self.display("Hello world")
+
     def on_command(self, client, userdata, message):
         self.display(str(message.payload.decode("utf-8")))
 
     def display(self, data):
-        print('print text on lcd')
-        print(data)
+        # clear
+        self.oled.fill(0)
+        self.oled.show()
+
+        image = Image.new("1", (self.oled.width, self.oled.height))
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
+        draw.rectangle(
+            (self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1),
+            outline=0,
+            fill=0
+        )
+
+        draw.text((10, 10), data, font=self.font, fill=1)  # 하얀색 폰트인 글씨를 (10,10) 위치에 그리기
+
+        # 이미지 자르기
+        box = (0, 0, self.WIDTH, self.HEIGHT)
+        region = image.crop(box)  # 해당 영역 만큼 이미지 자르기
+        # 이미지 변형
+        region = region.transpose(Image.ROTATE_180)  # 180도 회전
+        image.paste(region, box)
+
+        # show
+        self.oled.image(image)
+        self.oled.show()
+
+    def run(self):
+        self.client.loop_forever()
 
 
 output = StreamingOutput()
@@ -343,3 +392,5 @@ if __name__ == '__main__':
     cmd_th.start()
     etc_th = EtcThread()
     etc_th.start()
+    lcd_th = LCDThread()
+    lcd_th.start()
