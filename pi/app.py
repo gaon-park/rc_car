@@ -1,6 +1,5 @@
 from Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
 from Raspi_PWM_Servo_Driver import PWM
-import cv2
 import paho.mqtt.client as mqtt
 import socket
 from sense_hat import SenseHat
@@ -16,11 +15,11 @@ from picamera2.encoders import JpegEncoder
 from picamera2.outputs import FileOutput
 import libcamera
 
-isFront = False
-isBack = False
-isLeft = False
-isRight = False
-cmdCnt = 0
+IS_FRONT = False
+IS_BACK = False
+IS_LEFT = False
+IS_RIGHT = False
+CMD_CNT = 0
 PAGE = """\
 <html>
 <head>
@@ -154,40 +153,40 @@ class SenseHatThread(QThread):
         [4, 3]
     ]
 
-    def onDirLED(self, arg):
+    def on_dir_led(self, arg):
         for pos in arg:
             self.sense.set_pixel(pos[0], pos[1], self.YELLOW)
 
-    def onBreakLED(self):
+    def on_break_led(self):
         self.sense.set_pixel(7, 7, self.RED)
         self.sense.set_pixel(7, 0, self.RED)
 
-    currentCnt = 0
+    current_cnt = 0
 
     def run(self):
-        global isFront, isBack, isLeft, isRight, cmdCnt
+        global IS_FRONT, IS_BACK, IS_LEFT, IS_RIGHT, CMD_CNT
         while True:
-            if self.currentCnt != cmdCnt:
+            if self.current_cnt != CMD_CNT:
                 self.sense.clear()
-                self.currentCnt = cmdCnt
-            if isFront and isLeft:
-                self.onDirLED(self.FRONT_LEFT)
-            elif isFront and isRight:
-                self.onDirLED(self.FRONT_RIGHT)
-            elif isBack and isLeft:
-                self.onDirLED(self.BACK_LEFT)
-            elif isBack and isRight:
-                self.onDirLED(self.BACK_RIGHT)
-            elif isFront:
-                self.onDirLED(self.FRONT)
-            elif isBack:
-                self.onDirLED(self.BACK)
-            elif isLeft:
-                self.onDirLED(self.LEFT)
-            elif isRight:
-                self.onDirLED(self.RIGHT)
+                self.current_cnt = CMD_CNT
+            if IS_FRONT and IS_LEFT:
+                self.on_dir_led(self.FRONT_LEFT)
+            elif IS_FRONT and IS_RIGHT:
+                self.on_dir_led(self.FRONT_RIGHT)
+            elif IS_BACK and IS_LEFT:
+                self.on_dir_led(self.BACK_LEFT)
+            elif IS_BACK and IS_RIGHT:
+                self.on_dir_led(self.BACK_RIGHT)
+            elif IS_FRONT:
+                self.on_dir_led(self.FRONT)
+            elif IS_BACK:
+                self.on_dir_led(self.BACK)
+            elif IS_LEFT:
+                self.on_dir_led(self.LEFT)
+            elif IS_RIGHT:
+                self.on_dir_led(self.RIGHT)
             else:
-                self.onBreakLED()
+                self.on_break_led()
 
 
 class EtcThread(QThread):
@@ -195,7 +194,7 @@ class EtcThread(QThread):
     buzzer = TonalBuzzer(14)
     lst = 810.2
 
-    speedCmdSignal = Signal()
+    speed_cmd_signal = Signal()
 
     def __init__(self):
         super().__init__()
@@ -221,40 +220,40 @@ class CmdThread(QThread):
 
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
-        global isFront, isBack, isLeft, isRight, cmdCnt
-        cmdCnt += 1
-        if "go" == cmd and not isFront:
-            isFront = True
-            isBack = False
+        global IS_FRONT, IS_BACK, IS_LEFT, IS_RIGHT, CMD_CNT
+        CMD_CNT += 1
+        if "go" == cmd and not IS_FRONT:
+            IS_FRONT = True
+            IS_BACK = False
             self.go()
-        elif "back" == cmd and not isBack:
-            isFront = False
-            isBack = True
+        elif "back" == cmd and not IS_BACK:
+            IS_FRONT = False
+            IS_BACK = True
             self.back()
-        elif "stop" == cmd and (isFront or isBack):
-            isFront = False
-            isBack = False
+        elif "stop" == cmd and (IS_FRONT or IS_BACK):
+            IS_FRONT = False
+            IS_BACK = False
             self.stop()
-        elif "left" == cmd and not isLeft:
-            isLeft = True
-            isRight = False
+        elif "left" == cmd and not IS_LEFT:
+            IS_LEFT = True
+            IS_RIGHT = False
             self.left()
-        elif "right" == cmd and not isRight:
-            isLeft = False
-            isRight = True
+        elif "right" == cmd and not IS_RIGHT:
+            IS_LEFT = False
+            IS_RIGHT = True
             self.right()
-        elif "mid" == cmd and (isLeft or isRight):
-            isLeft = False
-            isRight = False
+        elif "mid" == cmd and (IS_LEFT or IS_RIGHT):
+            IS_LEFT = False
+            IS_RIGHT = False
             self.mid()
         elif "speed" in cmd:
             self.speed = int(cmd.split("=")[1]) * 50
             self.speed_changed()
 
     def speed_changed(self):
-        if isFront:
+        if IS_FRONT:
             self.go()
-        elif isBack:
+        elif IS_BACK:
             self.back()
 
     def __init__(self):
@@ -314,11 +313,11 @@ class CameraThread(QThread):
 
 output = StreamingOutput()
 if __name__ == '__main__':
-    cameraTh = CameraThread()
-    cameraTh.start()
-    senseTh = SenseHatThread()
-    senseTh.start()
-    cmdTh = CmdThread()
-    cmdTh.start()
-    etcTh = EtcThread()
-    etcTh.start()
+    camera_th = CameraThread()
+    camera_th.start()
+    sense_th = SenseHatThread()
+    sense_th.start()
+    cmd_th = CmdThread()
+    cmd_th.start()
+    etc_th = EtcThread()
+    etc_th.start()
