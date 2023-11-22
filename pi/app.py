@@ -43,6 +43,34 @@ PAGE = """\
 </html>
 """
 
+TONE_DIC = {
+    'c4': 261.62,
+    'c4#': 277.18,
+    'd4': 293.66,
+    'd4#': 311.12,
+    'e4': 329.62,
+    'f4': 349.22,
+    'f4#': 369.99,
+    'g4': 391.99,
+    'g4#': 415.3,
+    'a4': 440,
+    'a4#': 466.16,
+    'b4': 493.88,
+
+    'c5': 523.25,
+    'c5#': 554.36,
+    'd5': 587.32,
+    'd5#': 622.24,
+    'e5': 659.25,
+    'f5': 698.45,
+    'f5#': 739.98,
+    'g5': 783.99,
+    'g5#': 830.6,
+    'a5': 880,
+    'a5#': 932.32,
+    'b5': 987.76,
+}
+
 
 class StreamingOutput(io.BufferedIOBase):
     def __init__(self):
@@ -204,9 +232,6 @@ class SenseHatThread(threading.Thread):
 class EtcThread(threading.Thread):
     broker_address = socket.gethostbyname(socket.gethostname())
     buzzer = TonalBuzzer(14)
-    lst = 810.2
-
-    speed_cmd_signal = Signal()
 
     def __init__(self):
         super().__init__()
@@ -218,7 +243,7 @@ class EtcThread(threading.Thread):
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
         if "buzzer_on" == cmd:
-            self.buzzer.play(self.lst)
+            self.buzzer.play(TONE_DIC['c4'])
         elif "buzzer_off" == cmd:
             self.buzzer.stop()
 
@@ -373,7 +398,8 @@ class LCDThread(threading.Thread):
         self.spi = board.SPI()
         self.oled_cs = digitalio.DigitalInOut(board.D8)
         self.oled_dc = digitalio.DigitalInOut(board.D26)
-        self.oled = adafruit_ssd1306.SSD1306_SPI(self.WIDTH, self.HEIGHT, self.spi, self.oled_dc, self.oled_reset, self.oled_cs)
+        self.oled = adafruit_ssd1306.SSD1306_SPI(self.WIDTH, self.HEIGHT, self.spi, self.oled_dc, self.oled_reset,
+                                                 self.oled_cs)
 
         self.display("Hello world")
 
