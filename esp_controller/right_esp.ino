@@ -17,13 +17,13 @@ EspMQTTClient client(
   "RightController",
   1883);
 
-const int rotary_encoder_sw = 36;
-const int rotary_encoder_data = 39;
-const int rotary_encoder_clk = 34;
+#define ROTARY_ENCODER_SW 36
+#define ROTARY_ENCODER_DATA 39
+#define ROTARY_ENCODER_CLK 34
 
 const byte ROWS = 4;  // define row 4
 const byte COLS = 4;  // define column 4
-const char keys[ROWS][COLS] = {
+const char KEYS[ROWS][COLS] = {
   { '0', '1', '2', '3' },
   { '4', '5', '6', '7' },
   { '8', '9', 'A', 'B' },
@@ -31,57 +31,53 @@ const char keys[ROWS][COLS] = {
 };
 
 // connect row ports of the button to corresponding IO ports on the board
-byte row_pins[ROWS] = { 18, 5, 17, 16 };
+byte ROW_PINS[ROWS] = { 18, 5, 17, 16 };
 // connect column ports of the button to corresponding IO ports on the board
-byte col_pins[COLS] = { 23, 22, 21, 19 };
+byte COL_PINS[COLS] = { 23, 22, 21, 19 };
 // call class library performance function of Keypad
-Keypad keypad = Keypad(makeKeymap(keys), row_pins, col_pins, ROWS, COLS);
-
-volatile int counter = 0,  // 회전 카운터 측정용
-  currentStateCLK = 0,     // CLK의 현재 신호상태 저장용
-  lastStateCLK = 0;        // 직전 CLK의 신호상태 저장용
+Keypad KEYPAD = Keypad(makeKeymap(KEYS), ROW_PINS, COL_PINS, ROWS, COLS);
 
 // 한 번만 보내기 위한 flg 변수
 volatile bool command_rotary_button = false;
 
-char *cmd_topic = "command";
-char *etc_topic = "etc";
-char *lcd_topic = "lcd";
+char *CMD_TOPIC = "command";
+char *LCD_TOPIC = "lcd";
 
 //송신용 tx()
 void tx(char *topic, char *cmd) {
   client.publish(topic, cmd);  //topic , cmd
 }
 
-volatile int lastEncoded = 0, speed = 1;
-volatile long encoderValue = 0;
-volatile bool command_speed = false;
+volatile int LAST_ENCODED = 0, SPEED = 1;
+volatile bool COMMAND_SPEED = false;
 char rotary_command_base[10] = "speed=";
 void rotary_check(void) {
-  int clk = digitalRead(rotary_encoder_clk);
-  int dt = digitalRead(rotary_encoder_data);
+  int clk = digitalRead(ROTARY_ENCODER_CLK);
+  int dt = digitalRead(ROTARY_ENCODER_DATA);
   int encoded = (clk << 1) | dt;
-  int sum = (lastEncoded << 2) | encoded;
+  int sum = (LAST_ENCODED << 2) | encoded;
 
-  if ((sum == 0b1101 || sum == 0b1011) && !command_speed) {  // left
-    if (speed > 1) {                                         // min speed = 1
-      speed--;
-      rotary_command_base[6] = speed + '0';
-      tx(cmd_topic, rotary_command_base);
+  if ((sum == 0b1101 || sum == 0b1011) && !COMMAND_SPEED) {  // left
+    if (SPEED > 1) {                                         // min SPEED = 1
+      // Serial.println("rotary change");
+      SPEED--;
+      rotary_command_base[6] = SPEED + '0';
+      tx(CMD_TOPIC, rotary_command_base);
     }
   }
   if (sum == 0b1110 || sum == 0b1000) {  // right
-    if (speed < 9) {                     // max speed = 9
-      speed++;
-      rotary_command_base[6] = speed + '0';
-      tx(cmd_topic, rotary_command_base);
+    if (SPEED < 9) {                     // max SPEED = 9
+      // Serial.println("rotary change");
+      SPEED++;
+      rotary_command_base[6] = SPEED + '0';
+      tx(CMD_TOPIC, rotary_command_base);
     }
   }
-  lastEncoded = encoded;
+  LAST_ENCODED = encoded;
 }
 
 void keypad_check(void) {
-  char key = keypad.getKey();
+  char key = KEYPAD.getKey();
   if (key != NO_KEY) {
     String data = "";
     switch (key) {
@@ -138,8 +134,8 @@ void keypad_check(void) {
     for (int i = 0; i < data.length(); i++) {
       tx_data[i] = data[i];
     }
-    // Serial.println(tx_data);
-    tx(lcd_topic, tx_data);
+    Serial.println(tx_data);
+    tx(LCD_TOPIC, tx_data);
   }
 }
 
@@ -159,9 +155,9 @@ void setup(void) {
   client.enableOTA();
 
   // etc
-  pinMode(rotary_encoder_sw, INPUT);
-  pinMode(rotary_encoder_data, INPUT);
-  pinMode(rotary_encoder_clk, INPUT);
+  pinMode(ROTARY_ENCODER_SW, INPUT);
+  pinMode(ROTARY_ENCODER_DATA, INPUT);
+  pinMode(ROTARY_ENCODER_CLK, INPUT);
 
   // callback thread func
   rotary_th.onRun(rotary_check);

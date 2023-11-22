@@ -1,0 +1,9 @@
+// OLED
+DIN 10 (SPI MOSI)
+CLK 11 (SPI SCLK)
+CS 8 (SPI CE0)
+D/C 26
+RES 27
+
+// 부저
+GPIO14

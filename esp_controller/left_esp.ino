@@ -19,27 +19,43 @@ EspMQTTClient client(
   "LeftController",
   1883);
 
-const int go_button = 18;                    // the number of the go button pin
-const int back_button = 19;                  // the number of the back button pin
-const int buzzer_button = 17;                // the number of the buzzer button pin
-const int row_pins[4] = { 32, 33, 25, 26 };  // 4x4 keypad
-const int col_pins[4] = { 35, 34, 39, 36 };  // 4x4 keypad
+#define GO_BUTTON 18                    // the number of the go button pin
+#define BACK_BUTTON 19                  // the number of the back button pin
+#define BUZZER_BUTTON 17                // the number of the buzzer button pin
 
 // 한 번만 보내기 위한 flg 변수
-volatile bool command_go = false,
-              command_back = false,
-              command_stop = false,
-              command_left = false,
-              command_right = false,
-              command_mid = false,
-              command_buzzer = false;
+volatile bool COMMAND_GO = false,
+              COMMAND_BACK = false,
+              COMMAND_STOP = false,
+              COMMAND_LEFT_MIN = false,
+              COMMAND_LEFT_MAX = false,
+              COMMAND_RIGHT_MIN = false,
+              COMMAND_RIGHT_MAX = false,
+              COMMAND_MID = false,
+              COMMAND_BUZZER = false;
 
-char *cmd_topic = "command";
-char *etc_topic = "etc";
+char *CMD_TOPIC = "command";
+char *ETC_TOPIC = "etc";
 
 //송신용 tx()
 void tx(char *topic, char *cmd) {
   client.publish(topic, cmd);  //topic , cmd
+}
+
+void left_to_false(void) {
+  COMMAND_LEFT_MIN = false;
+  COMMAND_LEFT_MAX = false;
+}
+
+void right_to_false(void) {
+  COMMAND_RIGHT_MIN = false;
+  COMMAND_RIGHT_MAX = false;
+}
+
+void command_direction_all_false(void) {
+  left_to_false();
+  right_to_false();
+  COMMAND_MID = false;
 }
 
 // mpu Thread
@@ -47,23 +63,38 @@ class MPUThread : public Thread {
 public:
   sensors_event_t a, g, temp;
   void cmd_mpu_check(sensors_vec_t ac) {
-    if (ac.y >= 5 && !command_left) {
-      // Serial.println("left");
-      tx(cmd_topic, "left");
-      command_left = true;
-      command_right = false;
-      command_mid = false;
-    } else if (ac.y <= -6 && !command_right) {
-      // Serial.println("right");
-      tx(cmd_topic, "right");
-      command_left = false;
-      command_right = true;
-      command_mid = false;
-    } else if (-6 < ac.y && ac.y < 5 && !command_mid) {
-      tx(cmd_topic, "mid");
-      command_left = false;
-      command_right = false;
-      command_mid = true;
+    if (ac.y > 3) {
+      if (ac.y > 8 && !COMMAND_LEFT_MAX) {
+        // Serial.println("left_max");
+        tx(CMD_TOPIC, "left_max");
+        command_direction_all_false();
+        COMMAND_LEFT_MAX = true;
+      }
+      else if (ac.y <= 6 && !COMMAND_LEFT_MIN) {
+        // Serial.println("left_min");
+        tx(CMD_TOPIC, "left_min");
+        command_direction_all_false();
+        COMMAND_LEFT_MIN = true;
+      }
+    }
+    else if (ac.y < -3) {
+      if (ac.y < -8 && !COMMAND_RIGHT_MAX) {
+        // Serial.println("right_max");
+        tx(CMD_TOPIC, "right_max");
+        command_direction_all_false();
+        COMMAND_RIGHT_MAX = true;
+      }
+      else if (ac.y >= -6 && !COMMAND_RIGHT_MIN) {
+        // Serial.println("right_min");
+        tx(CMD_TOPIC, "right_min");
+        command_direction_all_false();
+        COMMAND_RIGHT_MIN = true;
+      }
+    }
+    else if (-2 < ac.y && ac.y < 2 && !COMMAND_MID) {
+      tx(CMD_TOPIC, "mid");
+      command_direction_all_false();
+      COMMAND_MID = true;
     }
   }
 
@@ -74,37 +105,40 @@ public:
   }
 };
 
+void command_all_false(void) {
+  COMMAND_GO = false;
+  COMMAND_BACK = false;
+  COMMAND_STOP = false;
+}
+
 void cmd_button_check(void) {
-  if (digitalRead(go_button) == LOW && !command_go) {
+  if (digitalRead(GO_BUTTON) == LOW && !COMMAND_GO) {
     // Serial.println("go");
-    tx(cmd_topic, "go");
-    command_go = true;
-    command_back = false;
-    command_stop = false;
-  } else if (digitalRead(back_button) == LOW && !command_back) {
+    tx(CMD_TOPIC, "go");
+    command_all_false();
+    COMMAND_GO = true;
+  } else if (digitalRead(BACK_BUTTON) == LOW && !COMMAND_BACK) {
     // Serial.println("back");
-    tx(cmd_topic, "back");
-    command_go = false;
-    command_back = true;
-    command_stop = false;
-  } else if (digitalRead(go_button) == HIGH && digitalRead(back_button) == HIGH && !command_stop) {
+    tx(CMD_TOPIC, "back");
+    command_all_false();
+    COMMAND_BACK = true;
+  } else if (digitalRead(GO_BUTTON) == HIGH && digitalRead(BACK_BUTTON) == HIGH && !COMMAND_STOP) {
     // Serial.println("stop");
-    tx(cmd_topic, "stop");
-    command_go = false;
-    command_back = false;
-    command_stop = true;
+    tx(CMD_TOPIC, "stop");
+    command_all_false();
+    COMMAND_STOP = true;
   }
 }
 
 void buzzer_button_check(void) {
-  if (digitalRead(buzzer_button) == LOW && !command_buzzer) {
+  if (digitalRead(BUZZER_BUTTON) == LOW && !COMMAND_BUZZER) {
     // Serial.println("buzzer_on");
-    tx(etc_topic, "buzzer_on");
-    command_buzzer = true;
-  } else if (digitalRead(buzzer_button) == HIGH && command_buzzer) {
+    tx(ETC_TOPIC, "buzzer_on");
+    COMMAND_BUZZER = true;
+  } else if (digitalRead(BUZZER_BUTTON) == HIGH && COMMAND_BUZZER) {
     // Serial.println("buzzer_off");
-    tx(etc_topic, "buzzer_off");
-    command_buzzer = false;
+    tx(ETC_TOPIC, "buzzer_off");
+    COMMAND_BUZZER = false;
   }
 }
 
@@ -125,11 +159,11 @@ void setup(void) {
   client.enableOTA();
 
   // command
-  pinMode(go_button, INPUT_PULLUP);
-  pinMode(back_button, INPUT_PULLUP);
+  pinMode(GO_BUTTON, INPUT_PULLUP);
+  pinMode(BACK_BUTTON, INPUT_PULLUP);
 
   // etc
-  pinMode(buzzer_button, INPUT_PULLUP);
+  pinMode(BUZZER_BUTTON, INPUT_PULLUP);
 
   // callback thread func
   cmd_th.onRun(cmd_button_check);

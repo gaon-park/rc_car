@@ -26,8 +26,10 @@ import adafruit_ssd1306
 
 IS_FRONT = False
 IS_BACK = False
-IS_LEFT = False
-IS_RIGHT = False
+IS_LEFT_MIN = False
+IS_LEFT_MAX = False
+IS_RIGHT_MIN = False
+IS_RIGHT_MAX = False
 CMD_CNT = 0
 PAGE = """\
 <html>
@@ -36,7 +38,7 @@ PAGE = """\
 </head>
 <body>
 <h1>Picamera2 MJPEG Streaming Demo</h1>
-<img src="stream.mjpg" width="640" height="480" />
+<img src="stream.mjpg" width="auto" height="auto" />
 </body>
 </html>
 """
@@ -101,13 +103,6 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 
 class SenseHatThread(threading.Thread):
-    def __init__(self):
-        super().__init__()
-        self.sense = SenseHat()
-
-    def run(self):
-        self.sense.clear()
-
     WHITE = (255, 255, 255)
     RED = (255, 0, 0)
     YELLOW = (255, 255, 0)
@@ -165,6 +160,10 @@ class SenseHatThread(threading.Thread):
         [4, 3]
     ]
 
+    def __init__(self):
+        super().__init__()
+        self.sense = SenseHat()
+
     def on_dir_led(self, arg):
         for pos in arg:
             self.sense.set_pixel(pos[0], pos[1], self.YELLOW)
@@ -176,26 +175,27 @@ class SenseHatThread(threading.Thread):
     current_cnt = 0
 
     def run(self):
-        global IS_FRONT, IS_BACK, IS_LEFT, IS_RIGHT, CMD_CNT
+        self.sense.clear()
+        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX, CMD_CNT
         while True:
             if self.current_cnt != CMD_CNT:
                 self.sense.clear()
                 self.current_cnt = CMD_CNT
-            if IS_FRONT and IS_LEFT:
+            if IS_FRONT and (IS_LEFT_MIN or IS_LEFT_MAX):
                 self.on_dir_led(self.FRONT_LEFT)
-            elif IS_FRONT and IS_RIGHT:
+            elif IS_FRONT and (IS_RIGHT_MIN or IS_RIGHT_MAX):
                 self.on_dir_led(self.FRONT_RIGHT)
-            elif IS_BACK and IS_LEFT:
+            elif IS_BACK and (IS_LEFT_MIN or IS_LEFT_MAX):
                 self.on_dir_led(self.BACK_LEFT)
-            elif IS_BACK and IS_RIGHT:
+            elif IS_BACK and (IS_RIGHT_MIN or IS_RIGHT_MAX):
                 self.on_dir_led(self.BACK_RIGHT)
             elif IS_FRONT:
                 self.on_dir_led(self.FRONT)
             elif IS_BACK:
                 self.on_dir_led(self.BACK)
-            elif IS_LEFT:
+            elif IS_LEFT_MIN or IS_LEFT_MAX:
                 self.on_dir_led(self.LEFT)
-            elif IS_RIGHT:
+            elif IS_RIGHT_MIN or IS_RIGHT_MAX:
                 self.on_dir_led(self.RIGHT)
             else:
                 self.on_break_led()
@@ -228,11 +228,19 @@ class EtcThread(threading.Thread):
 
 class CmdThread(threading.Thread):
     broker_address = socket.gethostbyname(socket.gethostname())
-    speed = 50  # default speed = 50, 이후 mqtt command 에 따라 50씩 증가
+    speed_idx = 0
+    speed = [100, 150, 200, 255]
+
+    def is_lr_all_false(self):
+        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX, CMD_CNT
+        IS_LEFT_MIN = False
+        IS_LEFT_MAX = False
+        IS_RIGHT_MIN = False
+        IS_RIGHT_MAX = False
 
     def on_command(self, client, userdata, message):
         cmd = str(message.payload.decode("utf-8"))
-        global IS_FRONT, IS_BACK, IS_LEFT, IS_RIGHT, CMD_CNT
+        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX, CMD_CNT
         CMD_CNT += 1
         if "go" == cmd and not IS_FRONT:
             IS_FRONT = True
@@ -246,20 +254,35 @@ class CmdThread(threading.Thread):
             IS_FRONT = False
             IS_BACK = False
             self.stop()
-        elif "left" == cmd and not IS_LEFT:
-            IS_LEFT = True
-            IS_RIGHT = False
-            self.left()
-        elif "right" == cmd and not IS_RIGHT:
-            IS_LEFT = False
-            IS_RIGHT = True
-            self.right()
-        elif "mid" == cmd and (IS_LEFT or IS_RIGHT):
-            IS_LEFT = False
-            IS_RIGHT = False
+        elif "left_max" == cmd and not IS_LEFT_MAX:
+            self.is_lr_all_false()
+            IS_LEFT_MAX = True
+            self.left_max()
+        elif "left_min" == cmd and not IS_LEFT_MIN:
+            self.is_lr_all_false()
+            IS_LEFT_MIN = True
+            self.left_min()
+        elif "right_max" == cmd and not IS_RIGHT_MAX:
+            self.is_lr_all_false()
+            IS_RIGHT_MAX = True
+            self.right_max()
+        elif "right_min" == cmd and not IS_RIGHT_MIN:
+            self.is_lr_all_false()
+            IS_RIGHT_MIN = True
+            self.right_min()
+        elif "mid" == cmd and (IS_LEFT_MIN or IS_RIGHT_MIN or IS_LEFT_MAX or IS_RIGHT_MAX):
+            self.is_lr_all_false()
             self.mid()
         elif "speed" in cmd:
-            self.speed = int(cmd.split("=")[1]) * 50
+            idx = int(cmd.split("=")[1])
+            if idx <= 2:
+                self.speed_idx = 0
+            elif idx <= 4:
+                self.speed_idx = 1
+            elif idx <= 6:
+                self.speed_idx = 2
+            else:
+                self.speed_idx = 3
             self.speed_changed()
 
     def speed_changed(self):
@@ -284,25 +307,31 @@ class CmdThread(threading.Thread):
         self.client.loop_forever()
 
     def go(self):
-        self.myMotor.setSpeed(self.speed)
+        self.myMotor.setSpeed(self.speed[self.speed_idx])
         self.myMotor.run(Raspi_MotorHAT.BACKWARD)
 
     def back(self):
-        self.myMotor.setSpeed(self.speed)
+        self.myMotor.setSpeed(self.speed[self.speed_idx])
         self.myMotor.run(Raspi_MotorHAT.FORWARD)
 
     def stop(self):
-        self.myMotor.setSpeed(self.speed)
+        self.myMotor.setSpeed(self.speed[self.speed_idx])
         self.myMotor.run(Raspi_MotorHAT.RELEASE)
 
-    def left(self):
+    def left_max(self):
         self.pwm.setPWM(0, 0, 300)
+
+    def left_min(self):
+        self.pwm.setPWM(0, 0, 340)
 
     def mid(self):
         self.pwm.setPWM(0, 0, 375)
 
-    def right(self):
+    def right_max(self):
         self.pwm.setPWM(0, 0, 450)
+
+    def right_min(self):
+        self.pwm.setPWM(0, 0, 410)
 
 
 class CameraThread(threading.Thread):
