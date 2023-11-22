@@ -31,6 +31,8 @@ PAGE = """\
 </body>
 </html>
 """
+
+
 class StreamingOutput(io.BufferedIOBase):
     def __init__(self):
         self.frame = None
@@ -87,6 +89,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
+
 
 class SenseHatThread(QThread):
     def __init__(self):
@@ -302,6 +305,7 @@ class CameraThread(QThread):
         self.picam2.configure(self.picam2.create_video_configuration(transform=libcamera.Transform(hflip=1, vflip=1)))
 
         self.picam2.start_recording(JpegEncoder(), FileOutput(output))
+
     def run(self):
         try:
             address = ('', 8000)
@@ -309,6 +313,24 @@ class CameraThread(QThread):
             server.serve_forever()
         finally:
             self.picam2.stop_recording()
+
+
+class LCDThread(QThread):
+    broker_address = socket.gethostbyname(socket.gethostname())
+
+    def __init__(self):
+        super().__init__()
+        self.client = mqtt.Client("lcd_sub")
+        self.client.connect(self.broker_address)
+        self.client.subscribe("lcd")
+        self.client.on_message = self.on_command
+
+    def on_command(self, client, userdata, message):
+        self.display(str(message.payload.decode("utf-8")))
+
+    def display(self, data):
+        print('print text on lcd')
+        print(data)
 
 
 output = StreamingOutput()

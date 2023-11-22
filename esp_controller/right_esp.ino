@@ -12,9 +12,9 @@ EspMQTTClient client(
   "MULTI_GUEST",   // wifi SSID
   "guest1357",     // wifi password
   "70.12.230.98",  // MQTT Broker server ip
-  "RightContollerID",
-  "RightContollerPW",
-  "RightContoller",
+  "RightControllerID",
+  "RightControllerPW",
+  "RightController",
   1883);
 
 const int rotary_encoder_sw = 36;
@@ -46,6 +46,7 @@ volatile bool command_rotary_button = false;
 
 char *cmd_topic = "command";
 char *etc_topic = "etc";
+char *lcd_topic = "lcd";
 
 //송신용 tx()
 void tx(char *topic, char *cmd) {
@@ -138,7 +139,7 @@ void keypad_check(void) {
       tx_data[i] = data[i];
     }
     // Serial.println(tx_data);
-    tx(etc_topic, tx_data);
+    tx(lcd_topic, tx_data);
   }
 }
 
