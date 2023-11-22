@@ -254,7 +254,7 @@ class CmdThread(threading.Thread):
     speed = [100, 150, 200, 255]
 
     def is_lr_all_false(self):
-        global IS_FRONT, IS_BACK, IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX
+        global IS_LEFT_MIN, IS_LEFT_MAX, IS_RIGHT_MIN, IS_RIGHT_MAX
         IS_LEFT_MIN = False
         IS_LEFT_MAX = False
         IS_RIGHT_MIN = False
