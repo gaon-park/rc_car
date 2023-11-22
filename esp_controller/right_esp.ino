@@ -37,9 +37,6 @@ byte COL_PINS[COLS] = { 23, 22, 21, 19 };
 // call class library performance function of Keypad
 Keypad KEYPAD = Keypad(makeKeymap(KEYS), ROW_PINS, COL_PINS, ROWS, COLS);
 
-// 한 번만 보내기 위한 flg 변수
-volatile bool command_rotary_button = false;
-
 char *CMD_TOPIC = "command";
 char *LCD_TOPIC = "lcd";
 
