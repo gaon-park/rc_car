@@ -46,7 +46,6 @@ void tx(char *topic, char *cmd) {
 }
 
 volatile int LAST_ENCODED = 0, SPEED = 1;
-volatile bool COMMAND_SPEED = false;
 char rotary_command_base[10] = "speed=";
 void rotary_check(void) {
   int clk = digitalRead(ROTARY_ENCODER_CLK);
@@ -54,7 +53,7 @@ void rotary_check(void) {
   int encoded = (clk << 1) | dt;
   int sum = (LAST_ENCODED << 2) | encoded;
 
-  if ((sum == 0b1101 || sum == 0b1011) && !COMMAND_SPEED) {  // left
+  if (sum == 0b1101 || sum == 0b1011) {  // left
     if (SPEED > 1) {                                         // min SPEED = 1
       // Serial.println("rotary change");
       SPEED--;
