@@ -23,7 +23,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
     <title>picamera2 MJPEG streaming demo</title>
     </head>
     <body>
-    <h1>Picamera2 MJPEG Streaming Demo</h1>
+    <h1>Front Camera Streaming</h1>
     <img src="stream.mjpg" width="auto" height="auto" />
     </body>
     </html>
