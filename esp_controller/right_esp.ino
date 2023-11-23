@@ -5,7 +5,6 @@
 #include "Thread.h"
 #include "ThreadController.h"
 #include <Arduino.h>
-#include <RotaryEncoder.h>
 #include <Keypad.h>
 
 EspMQTTClient client(
