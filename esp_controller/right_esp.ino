@@ -79,55 +79,55 @@ void keypad_check(void) {
     String data = "";
     switch (key) {
       case '0':
-        data = "출근";
-        break;
-      case '1':
-        data = "퇴근";
-        break;
-      case '2':
-        data = "취업";
-        break;
-      case '3':
-        data = "연애";
-        break;
-      case '4':
-        data = "좋다";
-        break;
-      case '5':
-        data = "싫다";
-        break;
-      case '6':
-        data = "!";
-        break;
-      case '7':
-        data = "?";
-        break;
-      case '8':
-        data = "따라와";
-        break;
-      case '9':
-        data = "저리가";
-        break;
-      case 'A':
-        data = "비켜";
-        break;
-      case 'B':
-        data = "안녕";
-        break;
-      case 'C':
         data = "^~^";
         break;
-      case 'D':
+      case '1':
         data = "ㅇ0ㅇ";
         break;
-      case 'E':
+      case '2':
         data = "ㅠ_ㅜ";
         break;
-      case 'F':
+      case '3':
         data = "ㅡ_ㅡ";
         break;
+      case '4':
+        data = "안녕?";
+        break;
+      case '5':
+        data = "나 갈게..";
+        break;
+      case '6':
+        data = "비켜";
+        break;
+      case '7':
+        data = "치워줘..";
+        break;
+      case '8':
+        data = "지나갈래..";
+        break;
+      case '9':
+        data = "막지마..";
+        break;
+      case 'A':
+        data = "먹을거..";
+        break;
+      case 'B':
+        data = "고마워!";
+        break;
+      case 'C':
+        data = "뒤에 비켜!";
+        break;
+      case 'D':
+        data = "좋아~!";
+        break;
+      case 'E':
+        data = "따라와라!";
+        break;
+      case 'F':
+        data = "공부해!!";
+        break;
     }
-    char tx_data[10] = {};
+    char tx_data[20] = {};
     for (int i = 0; i < data.length(); i++) {
       tx_data[i] = data[i];
     }
